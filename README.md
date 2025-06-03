@@ -159,3 +159,43 @@ src/
 ## Banco de Dados
 
 O projeto utiliza SQLite como banco de dados. O arquivo do banco será criado automaticamente como `shopping.db` na raiz do projeto.
+
+## Testes
+
+O projeto inclui testes unitários abrangentes para todos os serviços principais. Os testes são escritos usando Jest e seguem as melhores práticas de testes unitários.
+
+### Executando os Testes
+
+```bash
+# Executar todos os testes
+npm test
+
+# Executar testes com coverage
+npm test -- --coverage
+```
+
+### Cobertura de Testes
+
+Os testes cobrem os seguintes módulos e funcionalidades:
+
+#### CartService
+- Criação de carrinho vazio
+- Adição de itens ao carrinho
+- Atualização de quantidade
+- Validação de estoque
+- Tratamento de erros (carrinho não encontrado, estoque insuficiente)
+
+#### OrderService
+- Criação de pedido a partir do carrinho
+- Listagem de pedidos com ordenação
+- Busca de pedido por ID
+- Validação de carrinho vazio
+- Tratamento de erros
+
+#### WishlistService
+- Criação de lista de desejos
+- Adição de produtos
+- Prevenção de duplicatas
+- Remoção de produtos
+- Validações de existência de lista/produtos
+

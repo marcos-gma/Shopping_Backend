@@ -25,6 +25,7 @@ export class OrderService {
 
     const total = await this.cartService.calculateTotal(cartId);
     
+    // Cria itens do pedido a partir do carrinho
     const orderItems = await Promise.all(
       cart.items.map(async (cartItem) => {
         const product = await this.productService.findOne(cartItem.id);
@@ -36,6 +37,7 @@ export class OrderService {
       })
     );
 
+    // Salva pedido e limpa carrinho
     const order = this.orderRepository.create({
       total,
       items: orderItems,
@@ -47,6 +49,7 @@ export class OrderService {
     return order;
   }
 
+  // Retorna pedidos ordenados do mais recente pro mais antigo
   async findAll(): Promise<Order[]> {
     return this.orderRepository.find({
       relations: ['items', 'items.product'],

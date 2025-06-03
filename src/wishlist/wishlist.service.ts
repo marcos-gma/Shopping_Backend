@@ -15,6 +15,7 @@ export class WishlistService {
     private productRepository: Repository<Product>,
   ) {}
 
+  // Formata wishlist para retorno com dados relevantes dos produtos
   private toWishlistResponse(wishlist: Wishlist): WishlistResponse {
     return plainToClass(WishlistResponse, {
       id: wishlist.id,
@@ -62,6 +63,7 @@ export class WishlistService {
       throw new NotFoundException(`Product with ID ${productId} not found`);
     }
 
+    // Evita duplicatas na lista de desejos
     if (!wishlist.products.some(p => p.id === productId)) {
       wishlist.products.push(product);
       await this.wishlistRepository.save(wishlist);

@@ -18,6 +18,7 @@ export class CartService {
     private productService: ProductService,
   ) {}
 
+  // Converte o carrinho para o formato de resposta com totais calculados
   private toCartResponse(cart: Cart): CartResponse {
     const total = cart.items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
 
@@ -65,6 +66,7 @@ export class CartService {
 
     const product = await this.productService.findOne(productId);
 
+    // Atualiza quantidade se produto já existe no carrinho
     let cartItem = cart.items.find(item => item.product.id === productId);
 
     if (cartItem) {
@@ -121,10 +123,12 @@ export class CartService {
       throw new NotFoundException(`Product ${productId} not found in cart ${cartId}`);
     }
 
+    // Remove item se quantidade for 0 ou menor
     if (quantity <= 0) {
       return this.removeItem(cartId, productId);
     }
 
+    // Valida estoque disponível
     const product = await this.productService.findOne(productId);
     if (product.stock < quantity) {
       throw new BadRequestException(`Not enough stock. Available: ${product.stock}`);

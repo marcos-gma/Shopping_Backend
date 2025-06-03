@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { plainToClass } from 'class-transformer';
 import { Wishlist } from './wishlist.entity';
 import { Product } from '../product/product.entity';
+import { WishlistResponse } from './dto/wishlist-response.dto';
 
 @Injectable()
 export class WishlistService {
@@ -18,7 +20,7 @@ export class WishlistService {
     return await this.wishlistRepository.save(wishlist);
   }
 
-  async getWishlist(id: number): Promise<Wishlist> {
+  async getWishlist(id: number): Promise<WishlistResponse> {
     const wishlist = await this.wishlistRepository.findOne({
       where: { id },
       relations: ['products'],
@@ -28,7 +30,17 @@ export class WishlistService {
       throw new NotFoundException(`Wishlist with ID ${id} not found`);
     }
 
-    return wishlist;
+    const response = plainToClass(WishlistResponse, {
+      id: wishlist.id,
+      products: wishlist.products.map(product => ({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        stock: product.stock
+      }))
+    }, { excludeExtraneousValues: true });
+
+    return response;
   }
 
   async addToWishlist(wishlistId: number, productId: number): Promise<Wishlist> {

@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { plainToClass } from 'class-transformer';
 import { Cart } from './cart.entity';
 import { CartItem } from './cart-item.entity';
 import { Product } from '../product/product.entity';
 import { ProductService } from '../product/product.service';
+import { CartResponse } from './dto/cart-response.dto';
 
 @Injectable()
 export class CartService {
@@ -21,15 +23,31 @@ export class CartService {
     return await this.cartRepository.save(cart);
   }
 
-  async getCart(id: number): Promise<Cart> {
+  async getCart(id: number): Promise<CartResponse> {
     const cart = await this.cartRepository.findOne({
       where: { id },
       relations: ['items', 'items.product'],
     });
+
     if (!cart) {
       throw new NotFoundException(`Cart with ID ${id} not found`);
     }
-    return cart;
+
+    const total = cart.items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+
+    const response = plainToClass(CartResponse, {
+      id: cart.id,
+      items: cart.items.map(item => ({
+        id: item.product.id,
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+        total: item.product.price * item.quantity
+      })),
+      total
+    }, { excludeExtraneousValues: true });
+
+    return response;
   }
 
   async addItem(cartId: number, productId: number, quantity: number): Promise<Cart> {
@@ -56,14 +74,15 @@ export class CartService {
 
   async removeItem(cartId: number, productId: number): Promise<Cart> {
     const cart = await this.getCart(cartId);
-    const itemIndex = cart.items.findIndex(item => item.product.id === productId);
+    const cartItem = cart.items.find(item => item.product.id === productId);
 
-    if (itemIndex > -1) {
-      await this.cartItemRepository.remove(cart.items[itemIndex]);
-      cart.items.splice(itemIndex, 1);
+    if (!cartItem) {
+      throw new NotFoundException(`Product ${productId} not found in cart ${cartId}`);
     }
 
-    return cart;
+    await this.cartItemRepository.remove(cartItem);
+    
+    return this.getCart(cartId); // Recarrega o carrinho para ter certeza que está atualizado
   }
 
   async updateItemQuantity(cartId: number, productId: number, quantity: number): Promise<Cart> {
@@ -71,13 +90,24 @@ export class CartService {
     const cartItem = cart.items.find(item => item.product.id === productId);
 
     if (!cartItem) {
-      throw new NotFoundException(`Product not found in cart`);
+      throw new NotFoundException(`Product ${productId} not found in cart ${cartId}`);
+    }
+
+    if (quantity <= 0) {
+      // Se a quantidade for 0 ou menor, remove o item
+      return this.removeItem(cartId, productId);
+    }
+
+    // Verifica se há estoque suficiente
+    const product = await this.productService.findOne(productId);
+    if (product.stock < quantity) {
+      throw new BadRequestException(`Not enough stock. Available: ${product.stock}`);
     }
 
     cartItem.quantity = quantity;
     await this.cartItemRepository.save(cartItem);
 
-    return cart;
+    return this.getCart(cartId); // Recarrega o carrinho para ter certeza que está atualizado
   }
 
   async clearCart(cartId: number): Promise<void> {

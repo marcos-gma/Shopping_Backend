@@ -20,6 +20,9 @@ export class Product {
   @Column({ nullable: true })
   imageUrl: string;
 
+  @Column({ default: true })
+  active: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 

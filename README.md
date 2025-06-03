@@ -1,6 +1,6 @@
 # Shopping Backend
 
-Este é um backend de sistema de compras online desenvolvido com NestJS, TypeScript e SQLite.
+Este é um backend para um sistema de compras online (Amazona) desenvolvido com NestJS, TypeScript e SQLite.
 
 ## Funcionalidades
 

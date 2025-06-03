@@ -18,7 +18,7 @@ Este é um backend de sistema de compras online desenvolvido com NestJS, TypeScr
 
 1. Clone o repositório:
 ```bash
-git clone [URL_DO_SEU_REPOSITORIO]
+git clone https://github.com/marcos-gma/Shopping_Backend.git
 cd shopping-backend
 ```
 
@@ -93,25 +93,22 @@ Invoke-RestMethod -Method Delete -Uri "http://localhost:3000/products/1"
 ### Carrinho
 
 ```powershell
-# 1. Criar um novo carrinho e guardar ID
+# Criar um novo carrinho e guardar ID
 $cartResponse = Invoke-RestMethod -Method Post -Uri "http://localhost:3000/cart"; $cartId = $cartResponse.id
 
-# 2. Adicionar um produto ao carrinho (exemplo: produto ID 1, quantidade 2)
+# Adicionar um produto ao carrinho (exemplo: produto ID 1, quantidade 2)
 $body = @{productId = 1; quantity = 2} | ConvertTo-Json; Invoke-RestMethod -Method Post -Uri "http://localhost:3000/cart/$cartId/items" -Body $body -ContentType "application/json"
 
-# 3. Ver o carrinho
+# Ver o carrinho
 Invoke-RestMethod -Method Get -Uri "http://localhost:3000/cart/$cartId"
 
-# 4. Atualizar quantidade de um item (exemplo: produto ID 1, nova quantidade 3)
-$body = @{quantity = 3} | ConvertTo-Json; Invoke-RestMethod -Method Put -Uri "http://localhost:3000/cart/$cartId/items/1" -Body $body -ContentType "application/json"
-
-# 5. Remover um item do carrinho (exemplo: produto ID 1)
+# Remover um item do carrinho (exemplo: produto ID 1)
 Invoke-RestMethod -Method Delete -Uri "http://localhost:3000/cart/$cartId/items/1"
 
-# 6. Ver total do carrinho
+# Ver total do carrinho
 Invoke-RestMethod -Method Get -Uri "http://localhost:3000/cart/$cartId/total"
 
-# 7. Limpar todo o carrinho
+# Limpar todo o carrinho
 Invoke-RestMethod -Method Delete -Uri "http://localhost:3000/cart/$cartId"
 ```
 
@@ -162,31 +159,3 @@ src/
 ## Banco de Dados
 
 O projeto utiliza SQLite como banco de dados. O arquivo do banco será criado automaticamente como `shopping.db` na raiz do projeto.
-
-## Desenvolvimento
-
-Para executar em modo de desenvolvimento com hot-reload:
-
-```bash
-npm run start:dev
-```
-
-## Testes
-
-Para executar os testes:
-
-```bash
-npm run test
-```
-
-## Notas
-
-- O modo `synchronize: true` está ativado para desenvolvimento. Em produção, use migrations.
-- Este é um projeto de exemplo e pode precisar de ajustes para uso em produção.
-- Todos os comandos foram otimizados para copiar e colar em uma única linha no PowerShell.
-- Os IDs ($cartId, $wishlistId) são salvos em variáveis para reutilização nos comandos.
-
-## Contribuição
-
-Sinta-se à vontade para contribuir com o projeto através de pull requests.
-

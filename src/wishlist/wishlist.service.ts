@@ -15,9 +15,22 @@ export class WishlistService {
     private productRepository: Repository<Product>,
   ) {}
 
-  async createWishlist(): Promise<Wishlist> {
+  private toWishlistResponse(wishlist: Wishlist): WishlistResponse {
+    return plainToClass(WishlistResponse, {
+      id: wishlist.id,
+      products: wishlist.products.map(product => ({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        stock: product.stock
+      }))
+    }, { excludeExtraneousValues: true });
+  }
+
+  async createWishlist(): Promise<WishlistResponse> {
     const wishlist = this.wishlistRepository.create({ products: [] });
-    return await this.wishlistRepository.save(wishlist);
+    const savedWishlist = await this.wishlistRepository.save(wishlist);
+    return this.toWishlistResponse(savedWishlist);
   }
 
   async getWishlist(id: number): Promise<WishlistResponse> {
@@ -30,21 +43,19 @@ export class WishlistService {
       throw new NotFoundException(`Wishlist with ID ${id} not found`);
     }
 
-    const response = plainToClass(WishlistResponse, {
-      id: wishlist.id,
-      products: wishlist.products.map(product => ({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        stock: product.stock
-      }))
-    }, { excludeExtraneousValues: true });
-
-    return response;
+    return this.toWishlistResponse(wishlist);
   }
 
-  async addToWishlist(wishlistId: number, productId: number): Promise<Wishlist> {
-    const wishlist = await this.getWishlist(wishlistId);
+  async addToWishlist(wishlistId: number, productId: number): Promise<WishlistResponse> {
+    const wishlist = await this.wishlistRepository.findOne({
+      where: { id: wishlistId },
+      relations: ['products'],
+    });
+
+    if (!wishlist) {
+      throw new NotFoundException(`Wishlist with ID ${wishlistId} not found`);
+    }
+
     const product = await this.productRepository.findOne({ where: { id: productId } });
 
     if (!product) {
@@ -56,13 +67,22 @@ export class WishlistService {
       await this.wishlistRepository.save(wishlist);
     }
 
-    return wishlist;
+    return this.toWishlistResponse(wishlist);
   }
 
-  async removeFromWishlist(wishlistId: number, productId: number): Promise<Wishlist> {
-    const wishlist = await this.getWishlist(wishlistId);
+  async removeFromWishlist(wishlistId: number, productId: number): Promise<WishlistResponse> {
+    const wishlist = await this.wishlistRepository.findOne({
+      where: { id: wishlistId },
+      relations: ['products'],
+    });
+
+    if (!wishlist) {
+      throw new NotFoundException(`Wishlist with ID ${wishlistId} not found`);
+    }
+
     wishlist.products = wishlist.products.filter(product => product.id !== productId);
-    return await this.wishlistRepository.save(wishlist);
+    const savedWishlist = await this.wishlistRepository.save(wishlist);
+    return this.toWishlistResponse(savedWishlist);
   }
 
   async isProductInWishlist(wishlistId: number, productId: number): Promise<boolean> {

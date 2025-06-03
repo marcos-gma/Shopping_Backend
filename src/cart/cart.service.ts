@@ -18,9 +18,26 @@ export class CartService {
     private productService: ProductService,
   ) {}
 
-  async createCart(): Promise<Cart> {
+  private toCartResponse(cart: Cart): CartResponse {
+    const total = cart.items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+
+    return plainToClass(CartResponse, {
+      id: cart.id,
+      items: cart.items.map(item => ({
+        id: item.product.id,
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+        total: item.product.price * item.quantity
+      })),
+      total
+    }, { excludeExtraneousValues: true });
+  }
+
+  async createCart(): Promise<CartResponse> {
     const cart = this.cartRepository.create({ items: [] });
-    return await this.cartRepository.save(cart);
+    const savedCart = await this.cartRepository.save(cart);
+    return this.toCartResponse(savedCart);
   }
 
   async getCart(id: number): Promise<CartResponse> {
@@ -33,25 +50,19 @@ export class CartService {
       throw new NotFoundException(`Cart with ID ${id} not found`);
     }
 
-    const total = cart.items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-
-    const response = plainToClass(CartResponse, {
-      id: cart.id,
-      items: cart.items.map(item => ({
-        id: item.product.id,
-        name: item.product.name,
-        price: item.product.price,
-        quantity: item.quantity,
-        total: item.product.price * item.quantity
-      })),
-      total
-    }, { excludeExtraneousValues: true });
-
-    return response;
+    return this.toCartResponse(cart);
   }
 
-  async addItem(cartId: number, productId: number, quantity: number): Promise<Cart> {
-    const cart = await this.getCart(cartId);
+  async addItem(cartId: number, productId: number, quantity: number): Promise<CartResponse> {
+    const cart = await this.cartRepository.findOne({
+      where: { id: cartId },
+      relations: ['items', 'items.product'],
+    });
+
+    if (!cart) {
+      throw new NotFoundException(`Cart with ID ${cartId} not found`);
+    }
+
     const product = await this.productService.findOne(productId);
 
     let cartItem = cart.items.find(item => item.product.id === productId);
@@ -69,11 +80,19 @@ export class CartService {
       await this.cartItemRepository.save(cartItem);
     }
 
-    return cart;
+    return this.toCartResponse(cart);
   }
 
-  async removeItem(cartId: number, productId: number): Promise<Cart> {
-    const cart = await this.getCart(cartId);
+  async removeItem(cartId: number, productId: number): Promise<CartResponse> {
+    const cart = await this.cartRepository.findOne({
+      where: { id: cartId },
+      relations: ['items', 'items.product'],
+    });
+
+    if (!cart) {
+      throw new NotFoundException(`Cart with ID ${cartId} not found`);
+    }
+
     const cartItem = cart.items.find(item => item.product.id === productId);
 
     if (!cartItem) {
@@ -81,12 +100,21 @@ export class CartService {
     }
 
     await this.cartItemRepository.remove(cartItem);
+    cart.items = cart.items.filter(item => item.product.id !== productId);
     
-    return this.getCart(cartId); // Recarrega o carrinho para ter certeza que está atualizado
+    return this.toCartResponse(cart);
   }
 
-  async updateItemQuantity(cartId: number, productId: number, quantity: number): Promise<Cart> {
-    const cart = await this.getCart(cartId);
+  async updateItemQuantity(cartId: number, productId: number, quantity: number): Promise<CartResponse> {
+    const cart = await this.cartRepository.findOne({
+      where: { id: cartId },
+      relations: ['items', 'items.product'],
+    });
+
+    if (!cart) {
+      throw new NotFoundException(`Cart with ID ${cartId} not found`);
+    }
+
     const cartItem = cart.items.find(item => item.product.id === productId);
 
     if (!cartItem) {
@@ -94,11 +122,9 @@ export class CartService {
     }
 
     if (quantity <= 0) {
-      // Se a quantidade for 0 ou menor, remove o item
       return this.removeItem(cartId, productId);
     }
 
-    // Verifica se há estoque suficiente
     const product = await this.productService.findOne(productId);
     if (product.stock < quantity) {
       throw new BadRequestException(`Not enough stock. Available: ${product.stock}`);
@@ -107,16 +133,33 @@ export class CartService {
     cartItem.quantity = quantity;
     await this.cartItemRepository.save(cartItem);
 
-    return this.getCart(cartId); // Recarrega o carrinho para ter certeza que está atualizado
+    return this.toCartResponse(cart);
   }
 
   async clearCart(cartId: number): Promise<void> {
-    const cart = await this.getCart(cartId);
+    const cart = await this.cartRepository.findOne({
+      where: { id: cartId },
+      relations: ['items'],
+    });
+
+    if (!cart) {
+      throw new NotFoundException(`Cart with ID ${cartId} not found`);
+    }
+
     await this.cartItemRepository.remove(cart.items);
+    cart.items = [];
   }
 
   async calculateTotal(cartId: number): Promise<number> {
-    const cart = await this.getCart(cartId);
+    const cart = await this.cartRepository.findOne({
+      where: { id: cartId },
+      relations: ['items', 'items.product'],
+    });
+
+    if (!cart) {
+      throw new NotFoundException(`Cart with ID ${cartId} not found`);
+    }
+
     return cart.items.reduce((total, item) => {
       return total + (item.product.price * item.quantity);
     }, 0);

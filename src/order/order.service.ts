@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { CartService } from '../cart/cart.service';
+import { ProductService } from '../product/product.service';
 
 @Injectable()
 export class OrderService {
@@ -13,6 +14,7 @@ export class OrderService {
     @InjectRepository(OrderItem)
     private orderItemRepository: Repository<OrderItem>,
     private cartService: CartService,
+    private productService: ProductService,
   ) {}
 
   async createOrder(cartId: number): Promise<Order> {
@@ -23,13 +25,20 @@ export class OrderService {
 
     const total = await this.cartService.calculateTotal(cartId);
     
+    const orderItems = await Promise.all(
+      cart.items.map(async (cartItem) => {
+        const product = await this.productService.findOne(cartItem.id);
+        return this.orderItemRepository.create({
+          product,
+          quantity: cartItem.quantity,
+          price: cartItem.price,
+        });
+      })
+    );
+
     const order = this.orderRepository.create({
       total,
-      items: cart.items.map(cartItem => this.orderItemRepository.create({
-        product: cartItem.product,
-        quantity: cartItem.quantity,
-        price: cartItem.product.price,
-      })),
+      items: orderItems,
     });
 
     await this.orderRepository.save(order);

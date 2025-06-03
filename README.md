@@ -7,6 +7,7 @@ Este é um backend de sistema de compras online desenvolvido com NestJS, TypeScr
 - Gerenciamento de produtos (CRUD)
 - Carrinho de compras
 - Finalização de pedidos
+- Lista de Desejos (Wishlist)
 
 ## Requisitos
 
@@ -60,42 +61,78 @@ O servidor estará rodando em `http://localhost:3000`
 - `GET /orders` - Listar todos os pedidos
 - `GET /orders/:id` - Buscar um pedido específico
 
-## Exemplos de Uso
+### Lista de Desejos (Wishlist)
 
-### Criar um Produto
+- `POST /wishlist` - Criar uma nova lista de desejos
+- `GET /wishlist/:id` - Ver produtos na lista de desejos
+- `POST /wishlist/:id/products/:productId` - Adicionar produto à lista
+- `DELETE /wishlist/:id/products/:productId` - Remover produto da lista
+- `GET /wishlist/:id/products/:productId` - Verificar se produto está na lista
 
-```bash
-curl -X POST http://localhost:3000/products \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Produto Teste",
-    "description": "Descrição do produto",
-    "price": 99.99,
-    "stock": 10
-  }'
+## Exemplos de Uso (PowerShell)
+
+### Produtos
+
+```powershell
+# Criar um produto
+$body = @{name = "Produto Teste"; description = "Descrição do produto"; price = 99.99; stock = 10} | ConvertTo-Json; Invoke-RestMethod -Method Post -Uri "http://localhost:3000/products" -Body $body -ContentType "application/json"
+
+# Listar todos os produtos
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/products"
+
+# Buscar produto específico (id = 1)
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/products/1"
+
+# Atualizar produto (id = 1)
+$body = @{name = "Produto Atualizado"; description = "Nova descrição"; price = 149.99; stock = 15} | ConvertTo-Json; Invoke-RestMethod -Method Put -Uri "http://localhost:3000/products/1" -Body $body -ContentType "application/json"
+
+# Deletar produto (id = 1)
+Invoke-RestMethod -Method Delete -Uri "http://localhost:3000/products/1"
 ```
 
-### Criar um Carrinho
+### Carrinho
 
-```bash
-curl -X POST http://localhost:3000/cart
+```powershell
+# Criar novo carrinho
+$cartResponse = Invoke-RestMethod -Method Post -Uri "http://localhost:3000/cart"
+
+# Adicionar item ao carrinho
+$body = @{productId = 1; quantity = 2} | ConvertTo-Json; Invoke-RestMethod -Method Post -Uri "http://localhost:3000/cart/$($cartResponse.id)/items" -Body $body -ContentType "application/json"
+
+# Ver carrinho
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/cart/$($cartResponse.id)"
+
+# Atualizar quantidade de item
+$body = @{quantity = 3} | ConvertTo-Json; Invoke-RestMethod -Method Put -Uri "http://localhost:3000/cart/$($cartResponse.id)/items/1" -Body $body -ContentType "application/json"
+
+# Ver total do carrinho
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/cart/$($cartResponse.id)/total"
 ```
 
-### Adicionar Item ao Carrinho
+### Lista de Desejos
 
-```bash
-curl -X POST http://localhost:3000/cart/1/items \
-  -H "Content-Type: application/json" \
-  -d '{
-    "productId": 1,
-    "quantity": 2
-  }'
+```powershell
+# Criar nova wishlist
+$wishlistResponse = Invoke-RestMethod -Method Post -Uri "http://localhost:3000/wishlist"
+
+# Adicionar produto à wishlist
+Invoke-RestMethod -Method Post -Uri "http://localhost:3000/wishlist/$($wishlistResponse.id)/products/1"
+
+# Ver produtos na wishlist
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/wishlist/$($wishlistResponse.id)"
+
+# Verificar se produto está na wishlist
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/wishlist/$($wishlistResponse.id)/products/1"
 ```
 
-### Finalizar Pedido
+### Pedidos
 
-```bash
-curl -X POST http://localhost:3000/orders/1
+```powershell
+# Criar pedido a partir do carrinho
+Invoke-RestMethod -Method Post -Uri "http://localhost:3000/orders/$($cartResponse.id)"
+
+# Listar todos os pedidos
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/orders"
 ```
 
 ## Estrutura do Projeto
@@ -105,6 +142,7 @@ src/
   product/           # Módulo de produtos
   cart/              # Módulo de carrinho
   order/            # Módulo de pedidos
+  wishlist/         # Módulo de lista de desejos
   app.module.ts     # Módulo principal
   main.ts           # Ponto de entrada
 ```
@@ -133,6 +171,7 @@ npm run test
 
 - O modo `synchronize: true` está ativado para desenvolvimento. Em produção, use migrations.
 - Este é um projeto de exemplo e pode precisar de ajustes para uso em produção.
+- Os comandos PowerShell foram otimizados para copiar e colar em uma única linha.
 
 ## Contribuição
 

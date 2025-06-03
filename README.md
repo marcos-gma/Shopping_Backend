@@ -75,8 +75,7 @@ O servidor estará rodando em `http://localhost:3000`
 
 ```powershell
 # Criar um produto
-$body = @{name = "Produto Teste"; description = "Descrição do produto"; price = 99.99; stock = 10} | ConvertTo-Json
-Invoke-RestMethod -Method Post -Uri "http://localhost:3000/products" -Body $body -ContentType "application/json"
+$body = @{name = "Produto Teste"; description = "Descrição do produto"; price = 99.99; stock = 10} | ConvertTo-Json; Invoke-RestMethod -Method Post -Uri "http://localhost:3000/products" -Body $body -ContentType "application/json"
 
 # Listar todos os produtos
 Invoke-RestMethod -Method Get -Uri "http://localhost:3000/products"
@@ -85,8 +84,7 @@ Invoke-RestMethod -Method Get -Uri "http://localhost:3000/products"
 Invoke-RestMethod -Method Get -Uri "http://localhost:3000/products/1"
 
 # Atualizar produto
-$body = @{name = "Novo Nome"; description = "Nova descrição"; price = 149.99; stock = 20} | ConvertTo-Json
-Invoke-RestMethod -Method Put -Uri "http://localhost:3000/products/1" -Body $body -ContentType "application/json"
+$body = @{name = "Novo Nome"; description = "Nova descrição"; price = 149.99; stock = 20} | ConvertTo-Json; Invoke-RestMethod -Method Put -Uri "http://localhost:3000/products/1" -Body $body -ContentType "application/json"
 
 # Deletar produto
 Invoke-RestMethod -Method Delete -Uri "http://localhost:3000/products/1"
@@ -95,20 +93,17 @@ Invoke-RestMethod -Method Delete -Uri "http://localhost:3000/products/1"
 ### Carrinho
 
 ```powershell
-# 1. Criar um novo carrinho
-$cartResponse = Invoke-RestMethod -Method Post -Uri "http://localhost:3000/cart"
-$cartId = $cartResponse.id
+# 1. Criar um novo carrinho e guardar ID
+$cartResponse = Invoke-RestMethod -Method Post -Uri "http://localhost:3000/cart"; $cartId = $cartResponse.id
 
 # 2. Adicionar um produto ao carrinho (exemplo: produto ID 1, quantidade 2)
-$body = @{productId = 1; quantity = 2} | ConvertTo-Json
-Invoke-RestMethod -Method Post -Uri "http://localhost:3000/cart/$cartId/items" -Body $body -ContentType "application/json"
+$body = @{productId = 1; quantity = 2} | ConvertTo-Json; Invoke-RestMethod -Method Post -Uri "http://localhost:3000/cart/$cartId/items" -Body $body -ContentType "application/json"
 
 # 3. Ver o carrinho
 Invoke-RestMethod -Method Get -Uri "http://localhost:3000/cart/$cartId"
 
 # 4. Atualizar quantidade de um item (exemplo: produto ID 1, nova quantidade 3)
-$body = @{quantity = 3} | ConvertTo-Json
-Invoke-RestMethod -Method Put -Uri "http://localhost:3000/cart/$cartId/items/1" -Body $body -ContentType "application/json"
+$body = @{quantity = 3} | ConvertTo-Json; Invoke-RestMethod -Method Put -Uri "http://localhost:3000/cart/$cartId/items/1" -Body $body -ContentType "application/json"
 
 # 5. Remover um item do carrinho (exemplo: produto ID 1)
 Invoke-RestMethod -Method Delete -Uri "http://localhost:3000/cart/$cartId/items/1"
@@ -123,9 +118,8 @@ Invoke-RestMethod -Method Delete -Uri "http://localhost:3000/cart/$cartId"
 ### Lista de Desejos
 
 ```powershell
-# Criar nova wishlist
-$wishlistResponse = Invoke-RestMethod -Method Post -Uri "http://localhost:3000/wishlist"
-$wishlistId = $wishlistResponse.id
+# Criar nova wishlist e guardar ID
+$wishlistResponse = Invoke-RestMethod -Method Post -Uri "http://localhost:3000/wishlist"; $wishlistId = $wishlistResponse.id
 
 # Adicionar produto à wishlist (exemplo: produto ID 1)
 Invoke-RestMethod -Method Post -Uri "http://localhost:3000/wishlist/$wishlistId/products/1"
@@ -184,4 +178,15 @@ Para executar os testes:
 ```bash
 npm run test
 ```
+
+## Notas
+
+- O modo `synchronize: true` está ativado para desenvolvimento. Em produção, use migrations.
+- Este é um projeto de exemplo e pode precisar de ajustes para uso em produção.
+- Todos os comandos foram otimizados para copiar e colar em uma única linha no PowerShell.
+- Os IDs ($cartId, $wishlistId) são salvos em variáveis para reutilização nos comandos.
+
+## Contribuição
+
+Sinta-se à vontade para contribuir com o projeto através de pull requests.
 
